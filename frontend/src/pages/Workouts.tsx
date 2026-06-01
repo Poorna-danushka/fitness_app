@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Flame, Clock, Dumbbell,
   ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  Sunrise, Sun, Sunset, Moon, Activity
+  Sunrise, Sun, Sunset, Moon, Activity, Calendar
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -25,31 +25,30 @@ interface Workout {
   date: string;
 }
 
-
 // ─── Time slot config ─────────────────────────────────────────────────────────
 const TIME_SLOTS = [
   {
     key: 'morning', label: 'Morning', hours: [5, 6, 7, 8, 9, 10, 11],
     Icon: Sunrise, color: 'text-amber-400',
-    bg: 'bg-amber-500/10', border: 'border-l-amber-500/50',
+    bg: 'bg-amber-500/10', border: 'border-amber-500/30',
     badge: 'bg-amber-500/10 text-amber-400',
   },
   {
     key: 'afternoon', label: 'Afternoon', hours: [12, 13, 14, 15, 16],
     Icon: Sun, color: 'text-yellow-400',
-    bg: 'bg-yellow-500/10', border: 'border-l-yellow-500/50',
+    bg: 'bg-yellow-500/10', border: 'border-yellow-500/30',
     badge: 'bg-yellow-500/10 text-yellow-400',
   },
   {
     key: 'evening', label: 'Evening', hours: [17, 18, 19, 20],
     Icon: Sunset, color: 'text-orange-400',
-    bg: 'bg-orange-500/10', border: 'border-l-orange-500/50',
+    bg: 'bg-orange-500/10', border: 'border-orange-500/30',
     badge: 'bg-orange-500/10 text-orange-400',
   },
   {
     key: 'night', label: 'Night', hours: [21, 22, 23, 0, 1, 2, 3, 4],
     Icon: Moon, color: 'text-blue-400',
-    bg: 'bg-blue-500/10', border: 'border-l-blue-500/50',
+    bg: 'bg-blue-500/10', border: 'border-blue-500/30',
     badge: 'bg-blue-500/10 text-blue-400',
   },
 ];
@@ -87,11 +86,8 @@ function getWeekDays(offset: number): Date[] {
   });
 }
 
-
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Mirrors the backend multipliers so we can display accurate kcal for old
-// workouts that were saved before the per-exercise calorie rate was added.
 const DIFFICULTY_MULTIPLIER: Record<string, number> = {
   beginner:     0.75,
   intermediate: 1.00,
@@ -100,7 +96,6 @@ const DIFFICULTY_MULTIPLIER: Record<string, number> = {
 
 function computeKcal(w: { caloriesBurned: number; duration: number; difficulty?: string; exerciseId: { caloriesPer10Min: number } }): number {
   if (w.caloriesBurned > 0) return w.caloriesBurned;
-  // Fallback: recalculate client-side for legacy records saved with 0 kcal
   const base       = w.exerciseId?.caloriesPer10Min || 50;
   const multiplier = DIFFICULTY_MULTIPLIER[w.difficulty ?? 'intermediate'] ?? 1.0;
   return Math.round((base * multiplier * w.duration) / 10);
@@ -115,8 +110,6 @@ export default function Workouts() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-
-
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
@@ -129,7 +122,6 @@ export default function Workouts() {
       setLoading(false);
     }
   }
-
 
   // ── Derived data ─────────────────────────────────────────────────────────────
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
@@ -158,7 +150,6 @@ export default function Workouts() {
   const fmtMins = (m: number) =>
     m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
 
-
   async function handleDelete(id: string) {
     try {
       await workoutAPI.delete(id);
@@ -173,7 +164,7 @@ export default function Workouts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
       </div>
     );
   }
@@ -183,131 +174,159 @@ export default function Workouts() {
   const selLabel = isToday
     ? 'Today'
     : selectedDate.toLocaleDateString('en-US', {
-        weekday: 'long', month: 'short', day: 'numeric',
+        weekday: 'long', month: 'long', day: 'numeric',
       });
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="pb-4 space-y-5">
+    <div className="pb-10 pt-4 space-y-8 relative text-white">
+      {/* Background Ambient Glows */}
+      <div className="absolute top-0 right-0 w-72 h-72 bg-green-500/5 blur-[100px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-40 left-0 w-64 h-64 bg-emerald-600/5 blur-[80px] rounded-full pointer-events-none -z-10" />
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
         <div>
-          <h1 className="font-display text-3xl font-bold text-white leading-tight">
+          <h1 className="font-display text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-tight">
             My Workouts
           </h1>
-          <p className="text-gray-600 text-sm mt-0.5">
-            {workouts.length} session{workouts.length !== 1 ? 's' : ''} logged
+          <p className="text-gray-400 text-sm mt-1.5 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-green-500" />
+            {workouts.length} session{workouts.length !== 1 ? 's' : ''} logged all-time
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Overall stats ── */}
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Sessions', value: workouts.length, Icon: Activity, c: 'text-green-400', bg: 'bg-green-500/10' },
-          { label: 'Kcal Burned', value: totalCalories > 999 ? `${(totalCalories/1000).toFixed(1)}k` : totalCalories, Icon: Flame, c: 'text-orange-400', bg: 'bg-orange-500/10' },
-          { label: 'Total Time', value: fmtMins(totalMinutes), Icon: Clock, c: 'text-purple-400', bg: 'bg-purple-500/10' },
-        ].map(({ label, value, Icon, c, bg }, i) => (
+          { label: 'Total Sessions', value: workouts.length, Icon: Activity, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+          { label: 'Total Kcal Burned', value: totalCalories > 999 ? `${(totalCalories/1000).toFixed(1)}k` : totalCalories, Icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
+          { label: 'Total Time Spent', value: fmtMins(totalMinutes), Icon: Clock, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+        ].map(({ label, value, Icon, color, bg, border }, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07 }}
-            className="card-surface rounded-2xl p-3.5"
+            transition={{ delay: i * 0.1, type: "spring", stiffness: 100 }}
+            whileHover={{ y: -5 }}
+            className={`bg-[#111113]/80 backdrop-blur-sm border ${border} rounded-2xl p-5 shadow-xl transition-transform`}
           >
-            <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center mb-2.5`}>
-              <Icon className={`w-4 h-4 ${c}`} />
+            <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-3 ring-1 ring-white/5`}>
+              <Icon className={`w-5 h-5 ${color}`} />
             </div>
-            <p className={`font-display text-xl font-bold ${c}`}>{value}</p>
-            <p className="text-gray-600 text-[11px] mt-0.5">{label}</p>
+            <p className={`font-display text-2xl md:text-3xl font-black ${color} tracking-tight`}>{value}</p>
+            <p className="text-gray-500 text-xs md:text-sm font-medium mt-1">{label}</p>
           </motion.div>
         ))}
       </div>
 
       {/* ── Week strip ── */}
-      <div className="card-surface rounded-2xl p-4">
-        <div className="flex items-center justify-between mb-3">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-[#111113]/80 backdrop-blur-sm border border-white/10 rounded-3xl p-5 shadow-2xl"
+      >
+        <div className="flex items-center justify-between mb-5">
           <button
             onClick={() => setWeekOffset(o => o - 1)}
-            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all active:scale-90"
+            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
-            {weekOffset === 0
-              ? 'This Week'
-              : weekOffset === -1
-              ? 'Last Week'
-              : `${weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — ${weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">
+              {weekOffset === 0 ? 'This Week' : weekOffset === -1 ? 'Last Week' : 'Past Week'}
+            </span>
+            <span className="text-sm font-medium text-gray-300">
+              {weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — {weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
           <button
             onClick={() => setWeekOffset(o => Math.min(o + 1, 0))}
             disabled={weekOffset >= 0}
-            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all active:scale-90 disabled:opacity-25 disabled:cursor-not-allowed"
+            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-90 disabled:opacity-20 disabled:cursor-not-allowed"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-2 md:gap-3">
           {weekDays.map((day, i) => {
             const isSelected   = sameDay(day, selectedDate);
             const todayDay     = sameDay(day, new Date());
             const isFuture     = day > new Date() && !todayDay;
-            const dotCount     = Math.min(workoutsForDay(day).length, 3);
+            const workoutsLen  = workoutsForDay(day).length;
+            const dotCount     = Math.min(workoutsLen, 3);
+            
             return (
               <button
                 key={i}
                 onClick={() => !isFuture && setSelectedDate(day)}
                 disabled={isFuture}
-                className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all active:scale-95 ${
+                className={`relative flex flex-col items-center justify-center gap-1.5 py-3 md:py-4 rounded-2xl transition-all duration-300 active:scale-95 overflow-hidden group ${
                   isSelected
-                    ? 'bg-green-500/20 border border-green-500/40'
+                    ? 'bg-gradient-to-b from-green-500/20 to-emerald-600/10 border-2 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.15)]'
                     : todayDay
-                    ? 'bg-white/[0.05] border border-white/[0.08]'
+                    ? 'bg-white/10 border border-white/20 hover:bg-white/15'
                     : isFuture
-                    ? 'opacity-25 cursor-not-allowed'
-                    : 'hover:bg-white/[0.04]'
+                    ? 'opacity-20 cursor-not-allowed'
+                    : 'bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/10'
                 }`}
               >
-                <span className="text-[9px] font-bold text-gray-600 uppercase">{DAY_SHORT[i]}</span>
-                <span
-                  className={`font-display text-sm font-bold ${
-                    isSelected ? 'text-green-400' : todayDay ? 'text-white' : 'text-gray-500'
-                  }`}
-                >
+                {/* Subtle hover glow */}
+                {!isFuture && !isSelected && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-green-500/0 to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+                
+                <span className={`text-[10px] md:text-xs font-bold uppercase tracking-wide z-10 ${isSelected ? 'text-green-300' : 'text-gray-500'}`}>
+                  {DAY_SHORT[i]}
+                </span>
+                <span className={`font-display text-lg md:text-2xl font-bold z-10 ${isSelected ? 'text-white' : todayDay ? 'text-gray-200' : 'text-gray-400'}`}>
                   {day.getDate()}
                 </span>
-                <div className="flex gap-0.5 h-1.5 items-center">
+                <div className="flex gap-1 h-1.5 items-center z-10 mt-0.5">
                   {dotCount > 0
                     ? Array.from({ length: dotCount }, (_, j) => (
                         <span
                           key={j}
-                          className={`w-1 h-1 rounded-full ${
-                            isSelected ? 'bg-green-400' : 'bg-green-500/50'
-                          }`}
+                          className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-green-400 shadow-[0_0_5px_#4ade80]' : 'bg-green-600/70'}`}
                         />
                       ))
-                    : <span className="w-1 h-1" />}
+                    : <span className="w-1.5 h-1.5 opacity-0" />}
                 </div>
               </button>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Day view ── */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-xl font-bold text-white">{selLabel}</h2>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-3 border-b border-white/10 pb-4">
+          <div>
+            <h2 className="font-display text-2xl font-bold text-white flex items-center gap-2">
+              {selLabel}
+              {isToday && <span className="px-2 py-0.5 rounded bg-green-500/20 text-green-400 text-xs uppercase tracking-wider font-bold">Today</span>}
+            </h2>
+          </div>
           {dayList.length > 0 && (
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-orange-400 font-semibold">
-                <Flame className="w-3.5 h-3.5" />{dayCalories} kcal
+            <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
+              <span className="flex items-center gap-1.5 text-orange-400 font-bold text-sm">
+                <Flame className="w-4 h-4" />{dayCalories} kcal
               </span>
-              <span className="flex items-center gap-1 text-purple-400 font-semibold">
-                <Clock className="w-3.5 h-3.5" />{fmtMins(dayMinutes)}
+              <div className="w-px h-4 bg-white/20" />
+              <span className="flex items-center gap-1.5 text-purple-400 font-bold text-sm">
+                <Clock className="w-4 h-4" />{fmtMins(dayMinutes)}
               </span>
             </div>
           )}
@@ -315,131 +334,140 @@ export default function Workouts() {
 
         {dayList.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="card-surface rounded-2xl p-8 flex flex-col items-center text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#111113]/50 border border-white/5 border-dashed rounded-3xl p-12 flex flex-col items-center text-center"
           >
-            <div className="w-14 h-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-3">
-              <Dumbbell className="w-6 h-6 text-gray-700" />
+            <div className="w-20 h-20 rounded-full bg-white/[0.03] flex items-center justify-center mb-5 ring-1 ring-white/10">
+              <Dumbbell className="w-8 h-8 text-gray-600" />
             </div>
-            <p className="font-display text-lg font-bold text-gray-500 mb-1">
-              {isFutureDay
-                ? 'Future day — plan ahead!'
-                : isToday
-                ? 'No workouts yet today'
-                : 'Rest day'}
+            <p className="font-display text-xl font-bold text-gray-300 mb-2">
+              {isFutureDay ? 'Future day — plan ahead!' : isToday ? 'No workouts logged yet' : 'Rest day'}
             </p>
-            <p className="text-gray-700 text-sm mb-5">
+            <p className="text-gray-500 max-w-sm">
               {isToday
-                ? 'Ready to crush it? Log your first session.'
+                ? 'Ready to crush your goals? Log your first session today to keep your streak alive.'
                 : isFutureDay
-                ? 'Select a past or current day to log.'
-                : 'No activity recorded for this day.'}
+                ? 'Select a past or current day to view your workout history.'
+                : 'Your body needs rest to grow. No activity recorded for this day.'}
             </p>
-
           </motion.div>
         ) : (
-          <div className="space-y-4">
-            {TIME_SLOTS.map(slot => {
-              const slotWorkouts = dayGrouped[slot.key];
-              if (!slotWorkouts?.length) return null;
-              return (
-                <div key={slot.key}>
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <div className={`w-6 h-6 rounded-lg ${slot.bg} flex items-center justify-center`}>
-                      <slot.Icon className={`w-3.5 h-3.5 ${slot.color}`} />
+          <div className="space-y-8">
+            <AnimatePresence>
+              {TIME_SLOTS.map(slot => {
+                const slotWorkouts = dayGrouped[slot.key];
+                if (!slotWorkouts?.length) return null;
+                
+                return (
+                  <motion.div 
+                    key={slot.key}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-8 h-8 rounded-lg ${slot.bg} flex items-center justify-center border border-white/5`}>
+                        <slot.Icon className={`w-4 h-4 ${slot.color}`} />
+                      </div>
+                      <span className={`text-sm font-bold uppercase tracking-widest ${slot.color}`}>
+                        {slot.label}
+                      </span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent ml-2" />
+                      <span className="text-gray-500 text-xs font-medium uppercase tracking-wide">
+                        {slotWorkouts.length} session{slotWorkouts.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                    <span className={`text-xs font-bold uppercase tracking-widest ${slot.color}`}>
-                      {slot.label}
-                    </span>
-                    <span className="text-gray-700 text-xs ml-auto">
-                      {slotWorkouts.length} session{slotWorkouts.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
 
-                  <div className="space-y-2">
-                    {slotWorkouts.map((w, idx) => {
-                      const sets = w.sets ?? 0;
-                      const hasSets = sets > 0;
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {slotWorkouts.map((w, idx) => {
+                        const sets = w.sets ?? 0;
+                        const hasSets = sets > 0;
 
-                      return (
-                        <motion.div
-                          key={w._id}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.04 }}
-                          className={`bg-[#0d0d0d] border border-white/[0.06] border-l-2 ${slot.border} rounded-xl p-4 transition-all duration-300`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            {/* Left: icon + info */}
-                            <div className="flex items-start gap-3 min-w-0">
-                              <div className={`w-10 h-10 rounded-xl ${slot.bg} flex items-center justify-center shrink-0 mt-0.5`}>
-                                <Dumbbell className={`w-5 h-5 ${slot.color}`} />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-semibold text-white text-sm truncate leading-tight">
-                                  {w.exerciseId?.name || 'Exercise'}
-                                </p>
-                                {w.exerciseId?.muscleGroup && (
-                                  <p className="text-[11px] text-gray-600 mt-0.5">
-                                    {w.exerciseId.muscleGroup}
+                        return (
+                          <motion.div
+                            key={w._id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            whileHover={{ scale: 1.02 }}
+                            className={`group bg-[#151518] border border-white/[0.05] hover:${slot.border} rounded-2xl p-5 transition-all duration-300 relative overflow-hidden`}
+                          >
+                            {/* Hover accent line */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${slot.bg} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                            
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-4 min-w-0">
+                                <div className={`w-12 h-12 rounded-xl bg-black/40 border border-white/5 flex items-center justify-center shrink-0 shadow-inner`}>
+                                  <Dumbbell className={`w-5 h-5 ${slot.color}`} />
+                                </div>
+                                <div className="min-w-0 py-0.5">
+                                  <p className="font-bold text-white text-base truncate mb-1">
+                                    {w.exerciseId?.name || 'Custom Exercise'}
                                   </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                  <span className="flex items-center gap-1 text-xs text-gray-500">
-                                    <Clock className="w-3 h-3" />{w.duration} min
-                                  </span>
-                                  {hasSets && (
-                                    <span className="text-xs text-gray-600">
-                                      {w.sets} sets{w.reps ? ` × ${w.reps}` : ''}
+                                  <div className="flex items-center gap-3 text-xs">
+                                    <span className="flex items-center gap-1.5 text-gray-400">
+                                      <Clock className="w-3.5 h-3.5" />{w.duration} min
                                     </span>
-                                  )}
-                                  <span className="flex items-center gap-1 text-xs text-orange-400 font-semibold">
-                                    <Flame className="w-3 h-3" />
-                                    {computeKcal(w)} kcal
-                                  </span>
-                                  {w.difficulty && w.difficulty !== 'intermediate' && (
-                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                                      w.difficulty === 'advanced'
-                                        ? 'bg-red-500/10 text-red-400'
-                                        : 'bg-blue-500/10 text-blue-400'
-                                    }`}>
-                                      {w.difficulty}
-                                    </span>
-                                  )}
+                                    {hasSets && (
+                                      <>
+                                        <div className="w-1 h-1 rounded-full bg-gray-700" />
+                                        <span className="text-gray-400">
+                                          {w.sets} sets{w.reps ? ` × ${w.reps}` : ''}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Right: time badge + controls */}
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${slot.badge}`}>
-                                {fmt12(w.date)}
-                              </span>
-
-                              {/* Controls */}
-                              <div className="flex items-center gap-1 mt-1">
-                                <button
-                                  onClick={() => setDeleteId(w._id)}
-                                  className="text-gray-700 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                              <div className="flex flex-col items-end gap-3 shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-white/5 text-gray-300`}>
+                                    {fmt12(w.date)}
+                                  </span>
+                                  <button
+                                    onClick={() => setDeleteId(w._id)}
+                                    className="text-gray-600 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                <span className="flex items-center gap-1.5 text-sm text-orange-400 font-bold bg-orange-500/10 px-2.5 py-1 rounded-lg border border-orange-500/20">
+                                  <Flame className="w-3.5 h-3.5" />
+                                  {computeKcal(w)}
+                                </span>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                            
+                            {/* Tags row */}
+                            <div className="mt-4 flex flex-wrap gap-2 pl-16">
+                              {w.exerciseId?.muscleGroup && (
+                                <span className="text-[10px] uppercase font-bold text-gray-400 bg-white/5 px-2 py-1 rounded-md">
+                                  {w.exerciseId.muscleGroup}
+                                </span>
+                              )}
+                              {w.difficulty && w.difficulty !== 'intermediate' && (
+                                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${
+                                  w.difficulty === 'advanced'
+                                    ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                    : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                }`}>
+                                  {w.difficulty}
+                                </span>
+                              )}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
-      </div>
-
-
+      </motion.div>
 
       {/* ── Delete Confirm ── */}
       <AnimatePresence>
@@ -453,28 +481,28 @@ export default function Workouts() {
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ opacity: 0, scale: 0.93 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.93 }}
-              className="relative bg-[#0e0e0e] border border-white/[0.08] rounded-2xl w-full max-w-xs p-6 shadow-2xl text-center"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative bg-[#111113] border border-white/10 rounded-3xl w-full max-w-xs p-8 shadow-2xl text-center"
             >
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-3">
-                <AlertTriangle className="w-6 h-6 text-red-400" />
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 border border-red-500/20 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+                <AlertTriangle className="w-8 h-8 text-red-400" />
               </div>
-              <h3 className="font-display text-xl font-bold text-white mb-1">Delete Workout?</h3>
-              <p className="text-gray-600 text-sm mb-5">This session will be permanently removed.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteId(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-gray-400 hover:text-white font-semibold text-sm transition-all"
-                >
-                  Cancel
-                </button>
+              <h3 className="font-display text-2xl font-bold text-white mb-2">Delete Session?</h3>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">This workout will be permanently removed from your history.</p>
+              <div className="flex flex-col gap-3">
                 <button
                   onClick={() => handleDelete(deleteId)}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 font-semibold text-sm transition-all"
+                  className="w-full py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all shadow-[0_0_15px_rgba(239,68,68,0.4)]"
                 >
-                  Delete
+                  Yes, Delete It
+                </button>
+                <button
+                  onClick={() => setDeleteId(null)}
+                  className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold text-sm transition-all"
+                >
+                  Cancel
                 </button>
               </div>
             </motion.div>
