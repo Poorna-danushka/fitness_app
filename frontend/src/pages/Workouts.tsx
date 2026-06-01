@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { workoutAPI, exerciseAPI } from '../api/apiService';
+import { workoutAPI } from '../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Flame, Clock, Dumbbell,

@@ -9,12 +9,14 @@ import MyPackage from './pages/MyPackage';
 import ExerciseView from './pages/ExerciseView';
 import Profile from './pages/Profile';
 import Workouts from './pages/Workouts';
+import UserNotificationsPage from './pages/UserNotificationsPage';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManagePackages from './pages/admin/ManagePackages';
 import ManageExercises from './pages/admin/ManageExercises';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManagePurchases from './pages/admin/ManagePurchases';
+import ManageNotifications from './pages/admin/ManageNotifications';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
@@ -31,6 +33,20 @@ function RootRedirect() {
   return <Navigate to="/dashboard" replace />;
 }
 
+function LoginRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
+  return <Login />;
+}
+
+function RegisterRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
+  return <Register />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -45,13 +61,13 @@ function App() {
           {/* User-only Routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<UserLayout />}>
-              <Route path="/dashboard"         element={<Dashboard />} />
-              <Route path="/packages"          element={<PackageList />} />
-              <Route path="/my-package"        element={<MyPackage />} />
-              <Route path="/workouts"          element={<Workouts />} />
-              {/* Exercise detail still accessible from My Package / Dashboard links */}
-              <Route path="/exercises/:id"     element={<ExerciseView />} />
-              <Route path="/profile"           element={<Profile />} />
+              <Route path="/dashboard"          element={<Dashboard />} />
+              <Route path="/packages"           element={<PackageList />} />
+              <Route path="/my-package"         element={<MyPackage />} />
+              <Route path="/workouts"           element={<Workouts />} />
+              <Route path="/exercises/:id"      element={<ExerciseView />} />
+              <Route path="/profile"            element={<Profile />} />
+              <Route path="/notifications"      element={<UserNotificationsPage />} />
             </Route>
           </Route>
 
@@ -59,11 +75,12 @@ function App() {
           <Route path="/admin" element={<AdminRoute />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route element={<AdminLayout />}>
-              <Route path="dashboard"  element={<AdminDashboard />} />
-              <Route path="packages"   element={<ManagePackages />} />
-              <Route path="exercises"  element={<ManageExercises />} />
-              <Route path="users"      element={<ManageUsers />} />
-              <Route path="purchases"  element={<ManagePurchases />} />
+              <Route path="dashboard"      element={<AdminDashboard />} />
+              <Route path="packages"       element={<ManagePackages />} />
+              <Route path="exercises"      element={<ManageExercises />} />
+              <Route path="users"          element={<ManageUsers />} />
+              <Route path="purchases"      element={<ManagePurchases />} />
+              <Route path="notifications"  element={<ManageNotifications />} />
             </Route>
           </Route>
 
@@ -73,20 +90,6 @@ function App() {
       </Router>
     </AuthProvider>
   );
-}
-
-function LoginRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
-  return <Login />;
-}
-
-function RegisterRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />;
-  return <Register />;
 }
 
 export default App;
