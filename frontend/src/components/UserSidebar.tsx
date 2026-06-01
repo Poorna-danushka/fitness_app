@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Package, Activity, User, LogOut, X, Zap, Dumbbell, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNotificationStore } from '../stores/notificationStore';
+import { useAnnouncements } from '../hooks/useNotifications';
 
 interface Props {
   onClose?: () => void;
@@ -10,16 +10,16 @@ interface Props {
 export default function UserSidebar({ onClose }: Props) {
   const location = useLocation();
   const { logout, user } = useAuth();
-  const { unreadCount } = useNotificationStore();
-  const unread = unreadCount();
+  const { unreadCount } = useAnnouncements();
+  const unread = unreadCount;
 
   const navItems = [
-    { name: 'Dashboard',      path: '/dashboard',    icon: <Home      className="w-[18px] h-[18px]" /> },
-    { name: 'Packages',       path: '/packages',     icon: <Package   className="w-[18px] h-[18px]" /> },
-    { name: 'My Package',     path: '/my-package',   icon: <Activity  className="w-[18px] h-[18px]" /> },
-    { name: 'Workouts',       path: '/workouts',     icon: <Dumbbell  className="w-[18px] h-[18px]" /> },
-    { name: 'Notifications',  path: '/notifications',icon: <Bell      className="w-[18px] h-[18px]" />, badge: unread },
-    { name: 'Profile',        path: '/profile',      icon: <User      className="w-[18px] h-[18px]" /> },
+    { name: 'Dashboard',     path: '/dashboard',    icon: <Home     className="w-[18px] h-[18px]" /> },
+    { name: 'Packages',      path: '/packages',     icon: <Package  className="w-[18px] h-[18px]" /> },
+    { name: 'My Package',    path: '/my-package',   icon: <Activity className="w-[18px] h-[18px]" /> },
+    { name: 'Workouts',      path: '/workouts',     icon: <Dumbbell className="w-[18px] h-[18px]" /> },
+    { name: 'Notifications', path: '/notifications',icon: <Bell     className="w-[18px] h-[18px]" />, badge: unread },
+    { name: 'Profile',       path: '/profile',      icon: <User     className="w-[18px] h-[18px]" /> },
   ];
 
   return (
@@ -44,8 +44,10 @@ export default function UserSidebar({ onClose }: Props) {
 
       {/* User profile pill */}
       <div className="mx-4 mt-4 mb-2 p-3 rounded-2xl bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/15 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center font-bold text-black text-sm shrink-0"
-          style={{ boxShadow: '0 0 12px rgba(34,197,94,0.3)' }}>
+        <div
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center font-bold text-black text-sm shrink-0"
+          style={{ boxShadow: '0 0 12px rgba(34,197,94,0.3)' }}
+        >
           {user?.name?.charAt(0).toUpperCase() || 'U'}
         </div>
         <div className="min-w-0">

@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import bcryptjs from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
@@ -45,6 +45,7 @@ const userSchema = new mongoose.Schema(
     // Preferences
     emailNotifications: { type: Boolean, default: true },
     theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+    readNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
     
     // Activity tracking
     lastActivityAt: { type: Date, default: Date.now },

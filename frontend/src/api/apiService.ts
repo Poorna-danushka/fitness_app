@@ -207,4 +207,15 @@ export const workoutAPI = {
   getMy: () => api.get('/workouts/my-workouts'),
 };
 
+// ─── Notification API ───────────────────────────────────────────────────────────
+
+export const notificationAPI = {
+  getAll: () => api.get('/notifications'),
+  create: (data: unknown) => api.post('/notifications', data),
+  update: (id: string, data: unknown) => api.put(`/notifications/${id}`, data),
+  delete: (id: string) => api.delete(`/notifications/${id}`),
+  markAsRead: (id: string) => api.post(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/read-all'),
+};
+
 export default api;

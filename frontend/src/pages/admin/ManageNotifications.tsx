@@ -4,17 +4,17 @@ import {
   Bell, Plus, Trash2, Pin, Info, CheckCircle, AlertTriangle, Zap,
   Eye, X, MessageSquare
 } from 'lucide-react';
-import { useNotificationStore, AnnouncementType, Announcement } from '../../stores/notificationStore';
+import { useAdminAnnouncements, AnnouncementType, Announcement } from '../../hooks/useNotifications';
 import { useAuth } from '../../context/AuthContext';
 
 const TYPE_CONFIG: Record<AnnouncementType, {
   label: string; icon: React.ReactNode;
   badgeClass: string; borderColor: string; bgColor: string;
 }> = {
-  info:    { label: 'Info',    icon: <Info           className="w-4 h-4" />, badgeClass: 'badge-info',    borderColor: '#3b82f6', bgColor: 'rgba(59,130,246,0.08)'  },
-  success: { label: 'Success', icon: <CheckCircle    className="w-4 h-4" />, badgeClass: 'badge-success', borderColor: '#22c55e', bgColor: 'rgba(34,197,94,0.08)'   },
-  warning: { label: 'Warning', icon: <AlertTriangle  className="w-4 h-4" />, badgeClass: 'badge-warning', borderColor: '#eab308', bgColor: 'rgba(234,179,8,0.08)'   },
-  urgent:  { label: 'Urgent',  icon: <Zap            className="w-4 h-4" />, badgeClass: 'badge-urgent',  borderColor: '#ef4444', bgColor: 'rgba(239,68,68,0.08)'   },
+  info:    { label: 'Info',    icon: <Info          className="w-4 h-4" />, badgeClass: 'badge-info',    borderColor: '#3b82f6', bgColor: 'rgba(59,130,246,0.08)'  },
+  success: { label: 'Success', icon: <CheckCircle   className="w-4 h-4" />, badgeClass: 'badge-success', borderColor: '#22c55e', bgColor: 'rgba(34,197,94,0.08)'   },
+  warning: { label: 'Warning', icon: <AlertTriangle className="w-4 h-4" />, badgeClass: 'badge-warning', borderColor: '#eab308', bgColor: 'rgba(234,179,8,0.08)'   },
+  urgent:  { label: 'Urgent',  icon: <Zap           className="w-4 h-4" />, badgeClass: 'badge-urgent',  borderColor: '#ef4444', bgColor: 'rgba(239,68,68,0.08)'   },
 };
 
 function timeAgo(iso: string) {
@@ -31,8 +31,14 @@ function NotifPreview({ ann }: { ann: Partial<Announcement> }) {
   const cfg = TYPE_CONFIG[ann.type || 'info'];
   return (
     <div
-      className="rounded-2xl p-4 border-l-4"
-      style={{ background: cfg.bgColor, borderLeftColor: cfg.borderColor, borderRight: '1px solid rgba(255,255,255,0.06)', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+      className="rounded-2xl p-4"
+      style={{
+        background: cfg.bgColor,
+        borderLeft: `3px solid ${cfg.borderColor}`,
+        border: `1px solid rgba(255,255,255,0.06)`,
+        borderLeftColor: cfg.borderColor,
+        borderLeftWidth: '3px',
+      }}
     >
       <div className="flex items-start gap-3">
         <div className="mt-0.5 shrink-0" style={{ color: cfg.borderColor }}>{cfg.icon}</div>
@@ -51,24 +57,22 @@ function NotifPreview({ ann }: { ann: Partial<Announcement> }) {
 
 export default function ManageNotifications() {
   const { user } = useAuth();
-  const { announcements, createAnnouncement, deleteAnnouncement, updateAnnouncement } = useNotificationStore();
+  const { announcements, createAnnouncement, deleteAnnouncement, updateAnnouncement } = useAdminAnnouncements();
 
   const [showForm, setShowForm] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
   const [form, setForm] = useState({
     title: '',
     message: '',
     type: 'info' as AnnouncementType,
     pinned: false,
   });
-
   const [errors, setErrors] = useState<{ title?: string; message?: string }>({});
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!form.title.trim()) e.title = 'Title is required.';
+    if (!form.title.trim())   e.title   = 'Title is required.';
     if (!form.message.trim()) e.message = 'Message is required.';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -113,12 +117,12 @@ export default function ManageNotifications() {
         </div>
       </motion.div>
 
-      {/* Stats bar */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total',   value: announcements.length,                                                   color: 'text-white' },
-          { label: 'Pinned',  value: announcements.filter(a => a.pinned).length,                             color: 'text-yellow-400' },
-          { label: 'Urgent',  value: announcements.filter(a => a.type === 'urgent').length,                  color: 'text-red-400' },
+          { label: 'Total',  value: announcements.length,                              color: 'text-white' },
+          { label: 'Pinned', value: announcements.filter(a => a.pinned).length,        color: 'text-yellow-400' },
+          { label: 'Urgent', value: announcements.filter(a => a.type === 'urgent').length, color: 'text-red-400' },
         ].map((s) => (
           <div key={s.label} className="card-surface p-4 rounded-2xl text-center">
             <p className={`text-2xl font-bold font-display ${s.color}`}>{s.value}</p>
@@ -168,7 +172,9 @@ export default function ManageNotifications() {
                       <button
                         key={t}
                         onClick={() => setForm({ ...form, type: t })}
-                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${cfg.badgeClass} ${isSelected ? 'ring-2 ring-offset-1 ring-offset-[#0d0d0f]' : 'opacity-50 hover:opacity-80'}`}
+                        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${cfg.badgeClass} ${
+                          isSelected ? 'opacity-100' : 'opacity-40 hover:opacity-70'
+                        }`}
                         style={isSelected ? { outline: `2px solid ${cfg.borderColor}`, outlineOffset: '2px' } : {}}
                       >
                         {cfg.icon}
@@ -254,11 +260,9 @@ export default function ManageNotifications() {
 
       {/* Announcement List */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-sm text-gray-400">
-            All Announcements <span className="text-gray-700">({announcements.length})</span>
-          </h2>
-        </div>
+        <h2 className="font-semibold text-sm text-gray-400">
+          All Announcements <span className="text-gray-700">({announcements.length})</span>
+        </h2>
 
         {announcements.length === 0 ? (
           <motion.div
@@ -292,10 +296,12 @@ export default function ManageNotifications() {
                   style={{ borderLeft: `3px solid ${cfg.borderColor}` }}
                 >
                   <div className="p-4 flex items-start gap-4">
-                    <div className="shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: cfg.bgColor, color: cfg.borderColor }}>
+                    <div
+                      className="shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center"
+                      style={{ background: cfg.bgColor, color: cfg.borderColor }}
+                    >
                       {cfg.icon}
                     </div>
-
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-semibold text-sm text-white">{ann.title}</span>
@@ -314,7 +320,6 @@ export default function ManageNotifications() {
                       </div>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => togglePin(ann)}
@@ -332,7 +337,6 @@ export default function ManageNotifications() {
                     </div>
                   </div>
 
-                  {/* Delete confirm */}
                   <AnimatePresence>
                     {deleteConfirmId === ann.id && (
                       <motion.div

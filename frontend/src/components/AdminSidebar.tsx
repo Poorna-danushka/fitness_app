@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Package, Dumbbell, CreditCard, LogOut, X, Shield, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useNotificationStore } from '../stores/notificationStore';
+import { useAdminAnnouncements } from '../hooks/useNotifications';
 
 interface Props {
   onClose?: () => void;
@@ -10,7 +10,7 @@ interface Props {
 export default function AdminSidebar({ onClose }: Props) {
   const location = useLocation();
   const { logout, user } = useAuth();
-  const { announcements } = useNotificationStore();
+  const { announcements } = useAdminAnnouncements();
 
   const menuItems = [
     { name: 'Dashboard',     path: '/admin/dashboard',     icon: <LayoutDashboard className="w-[18px] h-[18px]" /> },
@@ -27,8 +27,10 @@ export default function AdminSidebar({ onClose }: Props) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-white/[0.06]">
         <Link to="/admin/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-purple-600 rounded-xl flex items-center justify-center"
-            style={{ boxShadow: '0 0 16px rgba(168,85,247,0.35)' }}>
+          <div
+            className="w-8 h-8 bg-purple-600 rounded-xl flex items-center justify-center"
+            style={{ boxShadow: '0 0 16px rgba(168,85,247,0.35)' }}
+          >
             <Shield className="w-4 h-4 text-white" />
           </div>
           <span className="text-lg font-black tracking-tight font-display">
@@ -44,8 +46,10 @@ export default function AdminSidebar({ onClose }: Props) {
 
       {/* Admin profile pill */}
       <div className="mx-4 mt-4 mb-2 p-3 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/15 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-700 flex items-center justify-center font-bold text-sm shrink-0"
-          style={{ boxShadow: '0 0 12px rgba(168,85,247,0.3)' }}>
+        <div
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-purple-700 flex items-center justify-center font-bold text-sm shrink-0"
+          style={{ boxShadow: '0 0 12px rgba(168,85,247,0.3)' }}
+        >
           {user?.name?.charAt(0).toUpperCase() || 'A'}
         </div>
         <div className="min-w-0">

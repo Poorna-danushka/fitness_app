@@ -23,6 +23,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import completedExerciseRoutes from './routes/completedExerciseRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import workoutRoutes from './routes/workoutRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use(`${apiPrefix}/payments`, paymentRoutes);
 app.use(`${apiPrefix}/completed-exercises`, completedExerciseRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/workouts`, workoutRoutes);
+app.use(`${apiPrefix}/notifications`, notificationRoutes);
 
 // ============ Error Handling ============
 app.use(notFoundHandler);

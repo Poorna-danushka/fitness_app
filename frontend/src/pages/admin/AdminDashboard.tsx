@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
-import { useNotificationStore } from '../../stores/notificationStore';
+import { useAdminAnnouncements } from '../../hooks/useNotifications';
 import { Link } from 'react-router-dom';
 
 function timeAgo(iso: string) {
@@ -22,7 +22,7 @@ function timeAgo(iso: string) {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { announcements } = useNotificationStore();
+  const { announcements } = useAdminAnnouncements();
   const [stats, setStats] = useState({ users: 0, packages: 0, purchases: 0, revenue: 0 });
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

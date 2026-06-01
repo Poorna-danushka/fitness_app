@@ -1,14 +1,11 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CheckCheck, Check, Info, CheckCircle, AlertTriangle, Zap, Pin } from 'lucide-react';
-import { useNotificationStore, AnnouncementType, Announcement } from '../stores/notificationStore';
+import { useAnnouncements, AnnouncementType, Announcement } from '../hooks/useNotifications';
+import { useState } from 'react';
 
 const TYPE_CONFIG: Record<AnnouncementType, {
-  label: string;
-  icon: React.ReactNode;
-  badgeClass: string;
-  borderColor: string;
-  bgColor: string;
+  label: string; icon: React.ReactNode;
+  badgeClass: string; borderColor: string; bgColor: string;
 }> = {
   info:    { label: 'Info',    icon: <Info          className="w-4 h-4" />, badgeClass: 'badge-info',    borderColor: '#3b82f6', bgColor: 'rgba(59,130,246,0.08)'  },
   success: { label: 'Success', icon: <CheckCircle   className="w-4 h-4" />, badgeClass: 'badge-success', borderColor: '#22c55e', bgColor: 'rgba(34,197,94,0.08)'   },
@@ -31,10 +28,11 @@ function timeAgo(iso: string) {
 type FilterType = 'all' | AnnouncementType;
 
 export default function UserNotificationsPage() {
-  const { announcements, readIds, markRead, markAllRead, unreadCount } = useNotificationStore();
+  // Reads directly from localStorage — always up to date
+  const { announcements, readIds, markRead, markAllRead, unreadCount } = useAnnouncements();
   const [filter, setFilter] = useState<FilterType>('all');
 
-  const unread = unreadCount();
+  const unread = unreadCount;
 
   const sorted = [...announcements].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1;
@@ -42,7 +40,9 @@ export default function UserNotificationsPage() {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const filtered = filter === 'all' ? sorted : sorted.filter((a: Announcement) => a.type === filter);
+  const filtered = filter === 'all'
+    ? sorted
+    : sorted.filter((a: Announcement) => a.type === filter);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: 'all',     label: 'All' },
@@ -100,7 +100,9 @@ export default function UserNotificationsPage() {
             >
               {f.label}
               {count > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-green-500/25 text-green-300' : 'bg-white/[0.08] text-gray-600'}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  isActive ? 'bg-green-500/25 text-green-300' : 'bg-white/[0.08] text-gray-600'
+                }`}>
                   {count}
                 </span>
               )}
@@ -109,7 +111,7 @@ export default function UserNotificationsPage() {
         })}
       </div>
 
-      {/* Content */}
+      {/* Empty state */}
       {filtered.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -142,15 +144,12 @@ export default function UserNotificationsPage() {
                 onClick={() => markRead(ann.id)}
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all"
                 style={{
-                  borderLeft: `3px solid ${cfg.borderColor}`,
                   background: isUnread ? cfg.bgColor : 'rgba(255,255,255,0.015)',
                   border: `1px solid rgba(255,255,255,${isUnread ? '0.09' : '0.05'})`,
-                  borderLeftColor: cfg.borderColor,
-                  borderLeftWidth: '3px',
+                  borderLeft: `3px solid ${cfg.borderColor}`,
                 }}
               >
                 <div className="p-5 flex items-start gap-4">
-                  {/* Type icon */}
                   <div
                     className="shrink-0 mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{ background: cfg.bgColor, color: cfg.borderColor }}
@@ -158,7 +157,6 @@ export default function UserNotificationsPage() {
                     {cfg.icon}
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       <p className={`font-semibold text-sm ${isUnread ? 'text-white' : 'text-gray-400'}`}>
@@ -184,7 +182,6 @@ export default function UserNotificationsPage() {
                     </div>
                   </div>
 
-                  {/* Read indicator */}
                   <div className="shrink-0">
                     {isUnread ? (
                       <div className="w-8 h-8 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="Mark as read">

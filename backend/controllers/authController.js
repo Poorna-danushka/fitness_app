@@ -256,6 +256,7 @@ export const getMe = asyncHandler(async (req, res) => {
       height: user.height,
       isEmailVerified: user.isEmailVerified,
       subscriptionStatus: user.subscriptionStatus,
+      readNotifications: user.readNotifications,
       createdAt: user.createdAt,
     },
   });

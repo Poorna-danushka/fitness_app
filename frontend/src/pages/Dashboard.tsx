@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
-import { useNotificationStore, AnnouncementType } from '../stores/notificationStore';
+import { useAnnouncements, AnnouncementType } from '../hooks/useNotifications';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -81,10 +81,10 @@ export default function Dashboard() {
   const [weekData, setWeekData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { readIds, markRead, pinnedAnnouncements } = useNotificationStore();
-  const pinned = pinnedAnnouncements();
+  const { markRead, pinnedUnread } = useAnnouncements();
+  const visiblePinned = pinnedUnread.slice(0, 3);
   const [dismissedPinned, setDismissedPinned] = useState<string[]>([]);
-  const visiblePinned = pinned.filter(a => !dismissedPinned.includes(a.id) && !readIds.includes(a.id));
+  const actualVisible = visiblePinned.filter(a => !dismissedPinned.includes(a.id));
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -168,9 +168,9 @@ export default function Dashboard() {
     <div className="space-y-6 pb-12">
 
       {/* Pinned Announcements Banner */}
-      {visiblePinned.length > 0 && (
+      {actualVisible.length > 0 && (
         <div className="space-y-2">
-          {visiblePinned.map((ann) => {
+          {actualVisible.map((ann) => {
             const cfg = TYPE_COLORS[ann.type];
             return (
               <motion.div
